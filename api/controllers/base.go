@@ -32,7 +32,7 @@ func (a *App) Initialize(DbHost, DbPort, DbUser, DbName, DbPassword string) {
         fmt.Printf("We are connected to the database %s", DbName)
     }
 
-    a.DB.Debug().AutoMigrate(&models.User{}, &models.Task{}) //database migration
+    a.DB.Debug().AutoMigrate(&models.User{}, &models.Task{}, &models.PendingTask{}) //database migration
 
     a.Router = mux.NewRouter().StrictSlash(true)
     a.initializeRoutes()
@@ -52,6 +52,7 @@ func (a *App) initializeRoutes() {
     s.HandleFunc("/tasks", a.GetTasks).Methods("GET")
     s.HandleFunc("/tasks/{id:[0-9]+}", a.UpdateTask).Methods("PUT")
     s.HandleFunc("/tasks/{id:[0-9]+}", a.DeleteTask).Methods("DELETE")
+    s.HandleFunc("/assignTask/{id:[0-9]+}", a.AssignTask).Methods("POST")
 }
 
 func (a *App) RunServer() {

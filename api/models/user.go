@@ -1,12 +1,13 @@
 package models
 
 import (
-    "errors"
-    "strings"
+	"encoding/json"
+	"errors"
+	"strings"
 
-    "github.com/badoux/checkmail"
-    "github.com/jinzhu/gorm"
-    "golang.org/x/crypto/bcrypt"
+	"github.com/badoux/checkmail"
+	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // User model
@@ -17,6 +18,12 @@ type User struct {
     LastName     string `gorm:"size:100;not null"              json:"lastname"`
     Password     string `gorm:"size:100;not null"              json:"password"`
     ProfileImage string `gorm:"size:255"                       json:"profileimage"`
+}
+func (u User) MarshalJSON() ([]byte, error) {
+    type user User // prevent recursion
+    x := user(u)
+    x.Password = ""
+    return json.Marshal(x)
 }
 
 // HashPassword hashes password from user input
@@ -44,6 +51,19 @@ func (u *User) BeforeSave() error {
     u.Password = string(hashedpassword)
     return nil
 }
+
+
+func (u *User) AfterSave(tx *gorm.DB) error {
+    // pending, err := GetPendingTaskByEmail(u.Email, tx)
+    // if err == nil {
+    //     // pending.Task.AssignedTo = u
+	//     // tx.Save(&pending.Task)
+    // //     // DeletePendingTask(int(pending.ID), tx)
+    //     return nil
+    // }
+    return nil
+}
+
 
 // Prepare strips user input of any white spaces
 func (u *User) Prepare() {
@@ -113,3 +133,14 @@ func GetAllUsers(db *gorm.DB) (*[]User, error) {
     }
     return &users, nil
 }
+
+func Getuserbyemail(email string, db *gorm.DB) (*User, error) {
+    account := &User{}
+    if err := db.Debug().Table("users").Where("email = ?", email).First(account).Error; err != nil {
+        return nil, err
+    }
+    return account, nil
+}
+
+
+

@@ -10,12 +10,13 @@ import (
 
 type Task struct {
     gorm.Model
-    Name        string `gorm:"size:100;not null;unique" json:"name"`
-    Description string `gorm:"not null"                 json:"description"`
-    DueDate     time.Time `gorm:"not null"              json:"time"`
-    CreatedBy   User   `gorm:"foreignKey:UserID;"       json:"-"`
-    UserID      uint   `gorm:"not null"                 json:"user_id"`
-    AssignedTo  *User   `gorm:"ForeignKey:id"            json: "assigned_to"`
+    Name        string `gorm:"size:100;not null;unique"     json:"name"`
+    Description string `gorm:"not null"                     json:"description"`
+    DueDate     time.Time `gorm:"not null"                  json:"time"`
+    CreatedBy   User   `gorm:"foreignKey:UserID;"           json:"-"`
+    UserID      uint   `gorm:"not null"                     json:"user_id"`
+    AssignedTo   User `gorm:"ForeignKey:AssignedUserID"    json: "-"`
+    AssignedUserID uint `gorm:"not null"                    json:"assigned_user_id"`
 }
 
 func (v *Task) Prepare() {
@@ -59,6 +60,7 @@ func (v *Task) GetTask(db *gorm.DB) (*Task, error) {
 
 func GetTasks(userID uint, db *gorm.DB) (*[]Task, error) {
     Tasks := []Task{}
+
     if err := db.Debug().Find(&Tasks, "user_id = ?", userID).Error; err != nil {
         return &[]Task{}, err
     }
@@ -78,7 +80,8 @@ func (v *Task) UpdateTask(id int, db *gorm.DB) (*Task, error) {
     if err := db.Debug().Find(UpdatedTask, "id = ?", id).Updates(Task{
         Name:        v.Name,
         Description: v.Description,
-        DueDate:    v.DueDate}).Error; err != nil {
+        DueDate:    v.DueDate,
+        AssignedTo:    v.AssignedTo}).Error; err != nil {
         return UpdatedTask, err
     }
     return v, nil
@@ -91,3 +94,17 @@ func DeleteTask(id int, db *gorm.DB) error {
     }
     return nil
 }
+
+
+func GetAlltasks(userID uint, sortby string, limit int, offset int, db *gorm.DB) (*[]Task, error) {
+    Tasks := []Task{}
+    if err := db.Debug().Limit(limit).Offset(offset).Order((sortby)).Find(&Tasks, "user_id = ?", userID).Error; err != nil {
+        return &[]Task{}, err
+    }
+    return &Tasks, nil
+}
+
+
+
+
+

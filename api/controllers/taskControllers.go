@@ -11,6 +11,7 @@ import (
 
 	"github.com/gotutorial/api/models"
 	"github.com/gotutorial/api/responses"
+	"github.com/gotutorial/utils"
 )
 
 // CreateTask parses request, validates data and saves the new Task
@@ -61,7 +62,51 @@ func (a *App) CreateTask(w http.ResponseWriter, r *http.Request) {
 func (a *App) GetTasks(w http.ResponseWriter, r *http.Request) {
     user := r.Context().Value("userID").(float64)
     userID := uint(user)
-    Tasks, err := models.GetTasks(userID, a.DB)
+    
+    sortBy := r.URL.Query().Get("sortBy")
+    if sortBy == "" {
+        sortBy = "name.asc"
+    }
+
+    sortQuery, err := utils.ValidateAndReturnSortQuery(sortBy)
+    if err != nil {
+        responses.ERROR(w, http.StatusInternalServerError, err)
+        return 
+    }
+
+    strLimit := r.URL.Query().Get("limit")
+    // with a value as -1 for gorms Limit method, we'll get a request without limit as default
+    limit := -1
+    if strLimit != "" {
+        limit, err = strconv.Atoi(strLimit)
+        if err != nil || limit < -1 {
+            http.Error(w, "limit query parameter is no valid number", http.StatusBadRequest)
+            return
+        }
+    }
+    strOffset := r.URL.Query().Get("offset")
+    offset := -1
+    if strOffset != "" {
+        offset, err = strconv.Atoi(strOffset)
+        if err != nil || offset < -1 {
+            http.Error(w, "offset query parameter is no valid number", http.StatusBadRequest)
+            return
+        }
+    }
+
+
+    // filter := r.URL.Query().Get("filter")
+    // filterMap := map[string]string{}
+    // if filter != "" {
+    //     filterMap, err = utils.ValidateAndReturnFilterMap(filter)
+    //     if err != nil {
+    //         http.Error(w, err.Error(), http.StatusBadRequest)
+    //         return
+    //     }
+    // }
+
+    Tasks, err := models.GetAlltasks(userID, sortQuery, limit, offset, a.DB)
+    // Tasks, err := models.GetTasks(userID, a.DB)
     if err != nil {
         responses.ERROR(w, http.StatusInternalServerError, err)
         return
@@ -148,3 +193,4 @@ func (a *App) DeleteTask(w http.ResponseWriter, r *http.Request) {
     responses.JSON(w, http.StatusOK, resp)
     return
 }
+
