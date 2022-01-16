@@ -10,13 +10,13 @@ import (
 
 type Task struct {
     gorm.Model
-    Name        string `gorm:"size:100;not null;unique"     json:"name"`
-    Description string `gorm:"not null"                     json:"description"`
-    DueDate     time.Time `gorm:"not null"                  json:"time"`
-    CreatedBy   User   `gorm:"foreignKey:UserID;"           json:"-"`
-    UserID      uint   `gorm:"not null"                     json:"user_id"`
-    AssignedTo   User `gorm:"ForeignKey:AssignedUserID"    json: "-"`
-    AssignedUserID uint `gorm:"not null"                    json:"assigned_user_id"`
+    Name        string  `gorm:"size:100;not null;unique"     json:"name"`
+    Description string  `gorm:"not null"                     json:"description"`
+    DueDate     time.Time `gorm:"not null"                   json:"time"`
+    CreatedBy   User    `gorm:"foreignKey:UserID;"           json:"-"`
+    UserID      uint    `gorm:"not null"                     json:"user_id"`
+    AssignedTo   User   `gorm:"ForeignKey:AssignedUserID"    json:"-"`
+    AssignedUserID uint `gorm:"not null"                     json:"assigned_user_id"`
 }
 
 func (v *Task) Prepare() {

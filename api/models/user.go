@@ -19,6 +19,7 @@ type User struct {
     Password     string `gorm:"size:100;not null"              json:"password"`
     ProfileImage string `gorm:"size:255"                       json:"profileimage"`
 }
+
 func (u User) MarshalJSON() ([]byte, error) {
     type user User // prevent recursion
     x := user(u)
@@ -53,14 +54,13 @@ func (u *User) BeforeSave() error {
 }
 
 
-func (u *User) AfterSave(tx *gorm.DB) error {
-    // pending, err := GetPendingTaskByEmail(u.Email, tx)
-    // if err == nil {
-    //     // pending.Task.AssignedTo = u
-	//     // tx.Save(&pending.Task)
-    // //     // DeletePendingTask(int(pending.ID), tx)
-    //     return nil
-    // }
+func (u *User) AfterSave(db *gorm.DB) error {
+    pending, err := GetPendingTaskByEmail(u.Email, db)
+    if err == nil {
+        db.Debug().Model(&pending.Task).Where("ID = (?)", pending.TaskID).UpdateColumn("assigned_user_id", u.ID)
+        DeletePendingTask(int(pending.ID), db)
+        return nil
+    }
     return nil
 }
 
@@ -141,6 +141,3 @@ func Getuserbyemail(email string, db *gorm.DB) (*User, error) {
     }
     return account, nil
 }
-
-
-
